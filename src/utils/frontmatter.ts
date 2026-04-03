@@ -39,13 +39,13 @@ export function parseFrontmatter(content: string): ParsedMemory {
 
   return {
     frontmatter: {
-      name: frontmatter.name || '',
-      description: frontmatter.description || '',
-      type: parseMemoryType(frontmatter.type),
-      scope: parseScope(frontmatter.scope),
-      tags: parseTags(frontmatter.tags),
-      createdAt: frontmatter.createdAt,
-      updatedAt: frontmatter.updatedAt,
+      name: (frontmatter.name as string) || '',
+      description: (frontmatter.description as string) || '',
+      type: parseMemoryType(frontmatter.type as string | undefined),
+      scope: parseScope(frontmatter.scope as string | undefined),
+      tags: parseTags(frontmatter.tags as string[] | undefined),
+      createdAt: frontmatter.createdAt as string | undefined,
+      updatedAt: frontmatter.updatedAt as string | undefined,
     },
     body,
   }
@@ -78,7 +78,7 @@ export function serializeFrontmatter(
     updatedAt: new Date().toISOString(),
   })
 
-  return `---\n${yaml}---\n\n${body}\n`
+  return `---\n${yaml}\n---\n\n${body}\n`
 }
 
 // =============================================================================

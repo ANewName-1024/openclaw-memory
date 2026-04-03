@@ -60,11 +60,6 @@ export class TeamMemoryManager {
       throw new Error('Team memory is not enabled')
     }
 
-    // Validate scope - team memories must be team-scoped
-    if (memory.scope !== 'team') {
-      throw new Error('Team memory manager only accepts team-scoped memories')
-    }
-
     // Ensure directory exists
     await fs.mkdir(this.baseDir, { recursive: true })
 
@@ -81,7 +76,7 @@ export class TeamMemoryManager {
     const fullMemory: Memory = {
       ...memory,
       scope: 'team',
-      createdAt: memory.createdAt || now,
+      createdAt: now,
       updatedAt: now,
       filePath: filepath,
     }
@@ -269,7 +264,7 @@ export class TeamMemoryManager {
         // Check for dangling symlinks
         if (await isSymlink(filepath)) {
           const realPath = await fs.realpath(filepath)
-          if (!realPath.startsWith this.baseDir) {
+          if (!realPath.startsWith(this.baseDir)) {
             throw new SymlinkEscapeError(`Symlink escapes team directory: ${filepath}`)
           }
         }
@@ -299,10 +294,10 @@ export class TeamMemoryManager {
         filename: path.basename(filepath),
         filePath: filepath,
         mtimeMs: stat.mtimeMs,
-        description: frontmatter.description || null,
-        type: frontmatter.type,
+        description: (frontmatter.description as string) || null,
+        type: frontmatter.type as MemoryType | undefined,
         scope: 'team',
-        name: frontmatter.name,
+        name: frontmatter.name as string | undefined,
       }
     } catch {
       return null

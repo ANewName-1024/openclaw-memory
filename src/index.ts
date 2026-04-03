@@ -31,6 +31,44 @@ export {
 // Utilities
 export { parseFrontmatter, serializeFrontmatter } from './utils/frontmatter.js'
 
+// Errors
+export {
+  MemoryError,
+  MemoryNotFoundError,
+  MemoryValidationError,
+  MemoryExistsError,
+  MemoryQuotaError,
+  MemoryExportError,
+  MemoryImportError,
+} from './errors.js'
+
+// Events
+export {
+  MemoryEventEmitter,
+  globalEventEmitter,
+} from './events.js'
+export type { MemoryEvent, MemoryEventType, EventHandler } from './events.js'
+
+// Cache
+export { MemoryCache, MemoryStoreCache } from './cache.js'
+
+// Batch Operations
+export { MemoryBatchProcessor, MemoryTransaction } from './batch.js'
+export type { BatchOperation, BatchResult } from './batch.js'
+
+// TTL Cleanup
+export { TTLCleanupManager, ScheduledCleanup } from './ttl.js'
+export type { TTLCleanupResult, TTLCleanupPolicy } from './ttl.js'
+
+// Import/Export
+export {
+  MemoryExporter,
+  MemoryImporter,
+  createBackup,
+  listBackups,
+} from './import-export.js'
+export type { ExportMetadata, ExportData, ImportOptions, ImportResult } from './import-export.js'
+
 // =============================================================================
 // Default Instance Factory
 // =============================================================================

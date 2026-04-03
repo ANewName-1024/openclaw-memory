@@ -10,7 +10,7 @@ export const MEMORY_TYPES = ['user', 'feedback', 'project', 'reference'] as cons
 
 export type MemoryType = (typeof MEMORY_TYPES)[number]
 
-export type MemoryScope = 'private' | 'team'
+export type MemoryScope = 'private' | 'team' | 'both'
 
 // =============================================================================
 // Memory Entry
@@ -147,6 +147,44 @@ export interface MemorySearchResult {
   memories: Memory[]
   scores: Map<string, number>
   totalScanned: number
+}
+
+// =============================================================================
+// Pagination
+// =============================================================================
+
+export interface PaginationOptions {
+  page?: number
+  pageSize?: number
+  offset?: number
+  limit?: number
+}
+
+export interface PaginatedResult<T> {
+  items: T[]
+  total: number
+  page: number
+  pageSize: number
+  totalPages: number
+  hasNext: boolean
+  hasPrev: boolean
+}
+
+/**
+ * Normalize pagination options to offset/limit
+ */
+export function normalizePagination(opts: PaginationOptions): { offset: number; limit: number } {
+  if (opts.offset !== undefined && opts.limit !== undefined) {
+    return { offset: opts.offset, limit: opts.limit }
+  }
+  
+  const page = opts.page ?? 1
+  const pageSize = opts.pageSize ?? 20
+  
+  return {
+    offset: (page - 1) * pageSize,
+    limit: pageSize,
+  }
 }
 
 // =============================================================================

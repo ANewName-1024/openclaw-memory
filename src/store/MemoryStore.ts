@@ -23,7 +23,10 @@ import type {
   MemoryScope,
   MemoryConfig,
   MemorySearchOptions,
+  PaginationOptions,
+  PaginatedResult,
 } from '../types/index.js'
+import { normalizePagination } from '../types/index.js'
 import {
   MEMORY_TYPES,
   DEFAULT_MEMORY_CONFIG,
@@ -106,7 +109,7 @@ export class MemoryStore {
     const now = new Date()
     const fullMemory: Memory = {
       ...memory,
-      createdAt: memory.createdAt || now,
+      createdAt: now,
       updatedAt: now,
       filePath: filepath,
     }
@@ -247,6 +250,33 @@ export class MemoryStore {
   }
 
   /**
+   * Scan all memories with pagination
+   */
+  async scanPaginated(
+    signal?: AbortSignal,
+    pagination?: PaginationOptions
+  ): Promise<PaginatedResult<MemoryHeader>> {
+    const headers = await this.scan(signal)
+    const total = headers.length
+    
+    // Apply pagination
+    const { offset, limit } = normalizePagination(pagination ?? {})
+    const paginated = headers.slice(offset, offset + limit)
+    const totalPages = Math.ceil(total / limit)
+    const page = pagination?.page ?? 1
+
+    return {
+      items: paginated,
+      total,
+      page,
+      pageSize: limit,
+      totalPages,
+      hasNext: page < totalPages,
+      hasPrev: page > 1,
+    }
+  }
+
+  /**
    * Scan memories of a specific type
    */
   async scanType(type: MemoryType, signal?: AbortSignal): Promise<MemoryHeader[]> {
@@ -274,6 +304,32 @@ export class MemoryStore {
     }
 
     return headers.sort((a, b) => b.mtimeMs - a.mtimeMs)
+  }
+
+  /**
+   * Scan memories of a specific type with pagination
+   */
+  async scanTypePaginated(
+    type: MemoryType, 
+    signal?: AbortSignal,
+    pagination?: PaginationOptions
+  ): Promise<PaginatedResult<MemoryHeader>> {
+    const headers = await this.scanType(type, signal)
+    const total = headers.length
+    const { offset, limit } = normalizePagination(pagination ?? {})
+    const paginated = headers.slice(offset, offset + limit)
+    const totalPages = Math.ceil(total / limit)
+    const page = pagination?.page ?? 1
+
+    return {
+      items: paginated,
+      total,
+      page,
+      pageSize: limit,
+      totalPages,
+      hasNext: page < totalPages,
+      hasPrev: page > 1,
+    }
   }
 
   /**
@@ -306,6 +362,57 @@ export class MemoryStore {
     }
 
     return memories
+  }
+
+  /**
+   * Search memories with optional filters and pagination
+   */
+  async searchPaginated(
+    options: MemorySearchOptions,
+    pagination?: PaginationOptions
+  ): Promise<PaginatedResult<Memory>> {
+    let headers = await this.scan()
+
+    // Filter by type
+    if (options.type) {
+      headers = headers.filter(h => h.type === options.type)
+    }
+
+    // Filter by scope
+    if (options.scope && options.scope !== 'both') {
+      headers = headers.filter(h => h.scope === options.scope)
+    }
+
+    // Limit results
+    const maxResults = options.maxResults ?? this.config.aiSelection.maxResults
+    const filtered = headers.slice(0, maxResults)
+    const total = filtered.length
+
+    // Apply pagination
+    const { offset, limit } = normalizePagination(pagination ?? {})
+    const paginatedHeaders = filtered.slice(offset, offset + limit)
+
+    // Load full memories
+    const memories: Memory[] = []
+    for (const header of paginatedHeaders) {
+      const memory = await this.loadByPath(header.filePath)
+      if (memory) {
+        memories.push(memory)
+      }
+    }
+
+    const totalPages = Math.ceil(total / limit)
+    const page = pagination?.page ?? 1
+
+    return {
+      items: memories,
+      total,
+      page,
+      pageSize: limit,
+      totalPages,
+      hasNext: page < totalPages,
+      hasPrev: page > 1,
+    }
   }
 
   // ===========================================================================
